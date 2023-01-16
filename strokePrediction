@@ -1,0 +1,906 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "38a683d4-f0fa-435c-bd24-1ef62feb33f1",
+   "metadata": {},
+   "source": [
+    "## Introduction\n",
+    "In this notebook, we aim to predict stroke using Random Forest Classifier. The data includes information about patients' demographics, medical history, and lifestyle. The data includes 12 attributes such as `gender`, `age`, `hypertension`, `heart_disease`, `ever_married`, `work_type`, `Residence_type`, `avg_glucose_level`, `bmi`, `smoking_status` and `stroke`. Our goal is to use the information provided by these attributes to predict whether a patient is likely to have a stroke or not."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "40e8108a-fc0b-4213-9b39-eaaea45bc8fd",
+   "metadata": {},
+   "source": [
+    "## Data Description\n",
+    "The data contains information about 43400 patients. The following are the attributes of the data:"
+   ]
+  },
+  {
+   "cell_type": "raw",
+   "id": "bdfd58bf-108a-4d4f-857c-fa1b7a9b2489",
+   "metadata": {},
+   "source": [
+    "gender: \"Male\", \"Female\" or \"Other\"\n",
+    "age: age of the patient\n",
+    "hypertension: 0 if the patient doesn't have hypertension, 1 if the patient has hypertension\n",
+    "heart_disease: 0 if the patient doesn't have any heart diseases, 1 if the patient has a heart disease\n",
+    "ever_married: \"No\" or \"Yes\"\n",
+    "work_type: \"children\", \"Govt_jov\", \"Never_worked\", \"Private\" or \"Self-employed\"\n",
+    "Residence_type: \"Rural\" or \"Urban\"\n",
+    "avg_glucose_level: average glucose level in blood\n",
+    "bmi: body mass index\n",
+    "smoking_status: \"formerly smoked\", \"never smoked\", \"smokes\" or \"Unknown\"\n",
+    "stroke: 1 if the patient had a stroke or 0 if not"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 76,
+   "id": "b0795fdc-04c6-4397-9f23-1bffdc0e272d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 77,
+   "id": "90a6e50e-1d78-4b4c-bda8-79dbb51056dc",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Reading the dataset and storing it in variable 'stroke'\n",
+    "stroke=pd.read_csv('stroke.csv')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 78,
+   "id": "b1cab3cc-1451-4383-9d5d-869c18f62db5",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "id                     0\n",
+       "gender                 0\n",
+       "age                    0\n",
+       "hypertension           0\n",
+       "heart_disease          0\n",
+       "ever_married           0\n",
+       "work_type              0\n",
+       "Residence_type         0\n",
+       "avg_glucose_level      0\n",
+       "bmi                  201\n",
+       "smoking_status         0\n",
+       "stroke                 0\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 78,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Counting the missing values in each column\n",
+    "stroke.isnull().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 79,
+   "id": "56bf8779-d628-46fb-a9ad-d5e8efb40447",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Removing the column 'bmi' from the dataset\n",
+    "stroke. drop('bmi', axis=1, inplace=True)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 80,
+   "id": "4b947cff-9be1-4c71-ba6e-287e82b043ae",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "id                   0\n",
+       "gender               0\n",
+       "age                  0\n",
+       "hypertension         0\n",
+       "heart_disease        0\n",
+       "ever_married         0\n",
+       "work_type            0\n",
+       "Residence_type       0\n",
+       "avg_glucose_level    0\n",
+       "smoking_status       0\n",
+       "stroke               0\n",
+       "dtype: int64"
+      ]
+     },
+     "execution_count": 80,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Recounting the missing values in each column\n",
+    "stroke.isnull().sum()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 81,
+   "id": "5690a51a-ff00-432a-bea1-881ea4439d4f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>gender</th>\n",
+       "      <th>age</th>\n",
+       "      <th>hypertension</th>\n",
+       "      <th>heart_disease</th>\n",
+       "      <th>ever_married</th>\n",
+       "      <th>work_type</th>\n",
+       "      <th>Residence_type</th>\n",
+       "      <th>avg_glucose_level</th>\n",
+       "      <th>smoking_status</th>\n",
+       "      <th>stroke</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>9046</td>\n",
+       "      <td>Male</td>\n",
+       "      <td>67.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>Private</td>\n",
+       "      <td>Urban</td>\n",
+       "      <td>228.69</td>\n",
+       "      <td>formerly smoked</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>51676</td>\n",
+       "      <td>Female</td>\n",
+       "      <td>61.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>Self-employed</td>\n",
+       "      <td>Rural</td>\n",
+       "      <td>202.21</td>\n",
+       "      <td>never smoked</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>31112</td>\n",
+       "      <td>Male</td>\n",
+       "      <td>80.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>Private</td>\n",
+       "      <td>Rural</td>\n",
+       "      <td>105.92</td>\n",
+       "      <td>never smoked</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>60182</td>\n",
+       "      <td>Female</td>\n",
+       "      <td>49.0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>0</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>Private</td>\n",
+       "      <td>Urban</td>\n",
+       "      <td>171.23</td>\n",
+       "      <td>smokes</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>1665</td>\n",
+       "      <td>Female</td>\n",
+       "      <td>79.0</td>\n",
+       "      <td>1</td>\n",
+       "      <td>0</td>\n",
+       "      <td>Yes</td>\n",
+       "      <td>Self-employed</td>\n",
+       "      <td>Rural</td>\n",
+       "      <td>174.12</td>\n",
+       "      <td>never smoked</td>\n",
+       "      <td>1</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "      id  gender   age  hypertension  heart_disease ever_married  \\\n",
+       "0   9046    Male  67.0             0              1          Yes   \n",
+       "1  51676  Female  61.0             0              0          Yes   \n",
+       "2  31112    Male  80.0             0              1          Yes   \n",
+       "3  60182  Female  49.0             0              0          Yes   \n",
+       "4   1665  Female  79.0             1              0          Yes   \n",
+       "\n",
+       "       work_type Residence_type  avg_glucose_level   smoking_status  stroke  \n",
+       "0        Private          Urban             228.69  formerly smoked       1  \n",
+       "1  Self-employed          Rural             202.21     never smoked       1  \n",
+       "2        Private          Rural             105.92     never smoked       1  \n",
+       "3        Private          Urban             171.23           smokes       1  \n",
+       "4  Self-employed          Rural             174.12     never smoked       1  "
+      ]
+     },
+     "execution_count": 81,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Displaying the first 5 rows of the dataset\n",
+    "stroke.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 82,
+   "id": "9d4a590b-65de-44ce-b1ed-9edac5b9ac1f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(5110, 11)"
+      ]
+     },
+     "execution_count": 82,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# Getting the shape of the dataset\n",
+    "stroke.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2cb26816-28eb-4508-9c4f-5267f5434bfa",
+   "metadata": {},
+   "source": [
+    "# Data Cleaning\n",
+    "In this section we will be cleaning the data by removing null values, encoding categorical variables and scaling independent variables."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 83,
+   "id": "d520cb22-645a-44e3-b440-e679f132224f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.preprocessing import LabelEncoder"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 84,
+   "id": "453bce89-8462-4bcc-8805-e64e0a41163a",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{0: 'Female', 1: 'Male', 2: 'Other'}"
+      ]
+     },
+     "execution_count": 84,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "encoder = LabelEncoder()\n",
+    "# Encoding the 'gender' column of the dataset\n",
+    "stroke['gender'] = encoder.fit_transform(stroke['gender'])\n",
+    "# Creating a dictionary to store the encoded values and their corresponding original values\n",
+    "gender = {index : label for index, label in enumerate(encoder.classes_)}\n",
+    "# Displaying the dictionary\n",
+    "gender"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 85,
+   "id": "bd39e5ca-33fd-46fa-a224-2cc6e80087d2",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{0: 'No', 1: 'Yes'}"
+      ]
+     },
+     "execution_count": 85,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "stroke['ever_married'] = encoder.fit_transform(stroke['ever_married'])\n",
+    "ever_married = {index : label for index, label in enumerate(encoder.classes_)}\n",
+    "ever_married"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 86,
+   "id": "6c46cf5a-8559-4ebf-8c18-f73edf2dc4dd",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{0: 'Govt_job',\n",
+       " 1: 'Never_worked',\n",
+       " 2: 'Private',\n",
+       " 3: 'Self-employed',\n",
+       " 4: 'children'}"
+      ]
+     },
+     "execution_count": 86,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "stroke['work_type'] = encoder.fit_transform(stroke['work_type'])\n",
+    "work_type = {index : label for index, label in enumerate(encoder.classes_)}\n",
+    "work_type"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "id": "d83eb705-015c-40bb-912e-055c96c86971",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{0: 'Rural', 1: 'Urban'}"
+      ]
+     },
+     "execution_count": 87,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "stroke['Residence_type'] = encoder.fit_transform(stroke['Residence_type'])\n",
+    "Residence_type = {index : label for index, label in enumerate(encoder.classes_)}\n",
+    "Residence_type"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "id": "7feb33df-9e58-4128-84de-471af6ee5b1f",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{0: 'Unknown', 1: 'formerly smoked', 2: 'never smoked', 3: 'smokes'}"
+      ]
+     },
+     "execution_count": 88,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "stroke['smoking_status'] = encoder.fit_transform(stroke['smoking_status'])\n",
+    "smoking_status = {index : label for index, label in enumerate(encoder.classes_)}\n",
+    "smoking_status"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "id": "860c2037-9286-4eca-b8b2-0d0ea2bb686a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Storing the independent variables in 'x'\n",
+    "x = stroke.drop('stroke', axis=1)\n",
+    "# Storing the dependent variable in 'y'\n",
+    "y = stroke['stroke']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "id": "de5ba136-3cde-4b81-bd09-551f484530bd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.impute import SimpleImputer\n",
+    "from sklearn.preprocessing import MinMaxScaler\n",
+    "import numpy as np"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "id": "3b08cf4c-0bdb-409b-81fe-08d49b844d3f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "X Data is \n",
+      " [[9.0460e+03 1.0000e+00 6.7000e+01 0.0000e+00 1.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 1.0000e+00 2.2869e+02 1.0000e+00]\n",
+      " [5.1676e+04 0.0000e+00 6.1000e+01 0.0000e+00 0.0000e+00 1.0000e+00\n",
+      "  3.0000e+00 0.0000e+00 2.0221e+02 2.0000e+00]\n",
+      " [3.1112e+04 1.0000e+00 8.0000e+01 0.0000e+00 1.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 0.0000e+00 1.0592e+02 2.0000e+00]\n",
+      " [6.0182e+04 0.0000e+00 4.9000e+01 0.0000e+00 0.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 1.0000e+00 1.7123e+02 3.0000e+00]\n",
+      " [1.6650e+03 0.0000e+00 7.9000e+01 1.0000e+00 0.0000e+00 1.0000e+00\n",
+      "  3.0000e+00 0.0000e+00 1.7412e+02 2.0000e+00]\n",
+      " [5.6669e+04 1.0000e+00 8.1000e+01 0.0000e+00 0.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 1.0000e+00 1.8621e+02 1.0000e+00]\n",
+      " [5.3882e+04 1.0000e+00 7.4000e+01 1.0000e+00 1.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 0.0000e+00 7.0090e+01 2.0000e+00]\n",
+      " [1.0434e+04 0.0000e+00 6.9000e+01 0.0000e+00 0.0000e+00 0.0000e+00\n",
+      "  2.0000e+00 1.0000e+00 9.4390e+01 2.0000e+00]\n",
+      " [2.7419e+04 0.0000e+00 5.9000e+01 0.0000e+00 0.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 0.0000e+00 7.6150e+01 0.0000e+00]\n",
+      " [6.0491e+04 0.0000e+00 7.8000e+01 0.0000e+00 0.0000e+00 1.0000e+00\n",
+      "  2.0000e+00 1.0000e+00 5.8570e+01 0.0000e+00]]\n",
+      "y Data is \n",
+      " 0    1\n",
+      "1    1\n",
+      "2    1\n",
+      "3    1\n",
+      "4    1\n",
+      "5    1\n",
+      "6    1\n",
+      "7    1\n",
+      "8    1\n",
+      "9    1\n",
+      "Name: stroke, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Creating an object of SimpleImputer\n",
+    "ImputedModule = SimpleImputer(missing_values = np.nan, strategy ='mean')\n",
+    "# Fitting the imputer on 'x'\n",
+    "ImputedX = ImputedModule.fit(x)\n",
+    "# Imputing the missing values in 'x'\n",
+    "X = ImputedX.transform(x)\n",
+    "\n",
+    "#X Data\n",
+    "print('X Data is \\n' , X[:10])\n",
+    "\n",
+    "#y Data\n",
+    "print('y Data is \\n' , y[:10])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "id": "f76326a6-d6bb-42c3-8644-9731d2379dbd",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "x \n",
+      " [[0.12321436 0.5        0.81689453 0.         1.         1.\n",
+      "  0.5        1.         0.80126489 0.33333333]\n",
+      " [0.70820468 0.         0.74365234 0.         0.         1.\n",
+      "  0.75       0.         0.67902317 0.66666667]\n",
+      " [0.42601512 0.5        0.97558594 0.         1.         1.\n",
+      "  0.5        0.         0.23451205 0.66666667]\n",
+      " [0.8249283  0.         0.59716797 0.         0.         1.\n",
+      "  0.5        1.         0.53600776 1.        ]\n",
+      " [0.02192856 0.         0.96337891 1.         0.         1.\n",
+      "  0.75       0.         0.54934909 0.66666667]\n",
+      " [0.77672115 0.5        0.98779297 0.         0.         1.\n",
+      "  0.5        1.         0.60516111 0.33333333]\n",
+      " [0.73847653 0.5        0.90234375 1.         1.         1.\n",
+      "  0.5        0.         0.06910719 0.66666667]\n",
+      " [0.14226119 0.         0.84130859 0.         0.         0.\n",
+      "  0.5        1.         0.1812852  0.66666667]\n",
+      " [0.37533792 0.         0.71923828 0.         0.         1.\n",
+      "  0.5        0.         0.09708245 0.        ]\n",
+      " [0.82916855 0.         0.95117188 0.         0.         1.\n",
+      "  0.5        1.         0.01592651 0.        ]]\n",
+      "y \n",
+      " 0    1\n",
+      "1    1\n",
+      "2    1\n",
+      "3    1\n",
+      "4    1\n",
+      "5    1\n",
+      "6    1\n",
+      "7    1\n",
+      "8    1\n",
+      "9    1\n",
+      "Name: stroke, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "scaler = MinMaxScaler(copy=True, feature_range=(0, 1))\n",
+    "# Scaling the independent variables\n",
+    "X = scaler.fit_transform(x)\n",
+    "\n",
+    "# Displaying the first 10 rows of the scaled independent variables\n",
+    "print('x \\n' , X[:10])\n",
+    "# Displaying the first 10 rows of the dependent variable\n",
+    "print('y \\n' , y[:10])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 93,
+   "id": "6f941a99-05b3-44d5-bfa4-bb1e37d0efc8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import train_test_split"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 94,
+   "id": "b797bcec-b47a-4d31-b1c3-daf88018c4c9",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "x_train shape is: (5080, 10)\n",
+      "x_test shape is: (30, 10)\n",
+      "y_train shape is: (5080,)\n",
+      "y_test shape is: (30,)\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Splitting the data into training and testing sets\n",
+    "x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=30,random_state=0)\n",
+    "# Printing the shapes of the training and testing sets\n",
+    "print(\"x_train shape is:\",x_train.shape)\n",
+    "print(\"x_test shape is:\",x_test.shape)\n",
+    "print(\"y_train shape is:\",y_train.shape)\n",
+    "print(\"y_test shape is:\",y_test.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 95,
+   "id": "0bb7b031-b2b9-4339-a04c-b6b0818537fa",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.ensemble import RandomForestClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 96,
+   "id": "e84dd99b-83fe-448f-b3b8-728fef42e7fb",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "RandomForestClassifierModel Train Score is :  0.9515748031496063\n",
+      "RandomForestClassifierModel Test Score is :  0.9333333333333333\n",
+      "RandomForestClassifierModel features importances are :  [0.13600479 0.01210638 0.40137104 0.05392601 0.05996889 0.0352886\n",
+      " 0.03487013 0.01467571 0.22250358 0.02928487]\n",
+      "Predicted Value for RandomForestClassifierModel is :  [0 0 0 0 0 0 0 0 0 0]\n",
+      "Prediction Probabilities Value for RandomForestClassifierModel is :  [[0.80039313 0.19960687]\n",
+      " [0.99633742 0.00366258]\n",
+      " [0.95812789 0.04187211]\n",
+      " [0.99262461 0.00737539]\n",
+      " [0.99606523 0.00393477]\n",
+      " [0.97818964 0.02181036]\n",
+      " [0.93457429 0.06542571]\n",
+      " [0.92226415 0.07773585]\n",
+      " [0.96073339 0.03926661]\n",
+      " [0.63868093 0.36131907]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "RandomForestClassifierModel = RandomForestClassifier(criterion = 'gini',n_estimators=100,max_depth=5,random_state=33)\n",
+    "# Fitting the model on the training data\n",
+    "RandomForestClassifierModel.fit(x_train, y_train)\n",
+    "\n",
+    "#Calculating Details\n",
+    "print('RandomForestClassifierModel Train Score is : ' , RandomForestClassifierModel.score(x_train, y_train))\n",
+    "print('RandomForestClassifierModel Test Score is : ' , RandomForestClassifierModel.score(x_test, y_test))\n",
+    "print('RandomForestClassifierModel features importances are : ' , RandomForestClassifierModel.feature_importances_)\n",
+    "\n",
+    "#Calculating Prediction\n",
+    "y_pred = RandomForestClassifierModel.predict(x_test)\n",
+    "y_pred_prob = RandomForestClassifierModel.predict_proba(x_test)\n",
+    "print('Predicted Value for RandomForestClassifierModel is : ' , y_pred[:10])\n",
+    "print('Prediction Probabilities Value for RandomForestClassifierModel is : ' , y_pred_prob[:10])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 97,
+   "id": "ce1e572a-d98f-4472-8ee3-18ad223324ea",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.metrics import accuracy_score"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 98,
+   "id": "68b63f7e-72c7-4d1c-ad6c-e141a7e93554",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy Score:  28\n"
+     ]
+    }
+   ],
+   "source": [
+    "AccScore = accuracy_score(y_test, y_pred, normalize=False)\n",
+    "print('Accuracy Score: ', AccScore)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 99,
+   "id": "e406c30b-2599-4822-9925-34abe6154397",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.metrics import f1_score"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 100,
+   "id": "f52e4b6a-230c-439b-a568-3a1879482280",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "F1 Score:  0.9333333333333333\n"
+     ]
+    }
+   ],
+   "source": [
+    "F1Score = f1_score(y_test, y_pred, average='micro') #it can be : binary,macro,weighted,samples\n",
+    "print('F1 Score: ', F1Score)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 101,
+   "id": "a64fa776-df9e-4ded-a6d4-934cf7efdaf0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.metrics import confusion_matrix\n",
+    "import seaborn as sns\n",
+    "import matplotlib.pyplot as plt"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1534192b-97f6-4e7d-9a24-47299beace3c",
+   "metadata": {},
+   "source": [
+    "# Confusion Matrix\n",
+    "A confusion matrix is a table that is used to define the performance of a classification algorithm. It is used to evaluate the accuracy of a classification algorithm."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 102,
+   "id": "564dcbc6-774c-4fb6-bdfb-540129198afa",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Confusion Matrix: \n",
+      " [[28  0]\n",
+      " [ 2  0]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "confusionMatrix = confusion_matrix(y_test, y_pred)\n",
+    "print('Confusion Matrix: \\n', confusionMatrix)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "75ca6913-9115-447e-8917-e01c5c7df595",
+   "metadata": {},
+   "source": [
+    "# Heatmap\n",
+    "This heatmap visualization is useful for understanding the performance of the classification model, as it provides a clear visual representation of the number of correct and incorrect predictions made by the model. The heatmap will be used to show the true positive, true negative, false positive, and false negative values and the accuracy of the model."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 103,
+   "id": "7d10da55-ba43-4716-9d9d-bb8191edc6c4",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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\n",
+      "text/plain": [
+       "<Figure size 640x480 with 2 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "sns.heatmap(confusionMatrix, center = True,annot=True)\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f45c0ac2-8fcd-4d6b-9b04-88f931c8af4c",
+   "metadata": {},
+   "source": [
+    "# Conclusion\n",
+    "In this section, we will summarize the results of our analysis and provide some insights about what we learned from the data. We will also provide some suggestions for further research or improvements to the model."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1196dcb2-8ae0-4554-a803-a6580ce35623",
+   "metadata": {},
+   "source": [
+    "The confusion matrix has the following structure:"
+   ]
+  },
+  {
+   "cell_type": "raw",
+   "id": "1d42b509-5a18-484b-9969-29a54e758886",
+   "metadata": {},
+   "source": [
+    "                | Predicted Positive| Predicted Negative |\n",
+    "Actual Positive | 28                | 2                  |\n",
+    "Actual Negative | 0                 | 0                  |"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b5743487-f6a8-48ea-a3dd-2b82a24c56df",
+   "metadata": {},
+   "source": [
+    "This tells us that:"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "414db717-c6e1-4f0e-a379-675b08e223d5",
+   "metadata": {},
+   "source": [
+    "True Positive (TP) = 28, The number of times the model correctly predicted the positive class (i.e, patients who had a stroke)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2c670074-1e6f-4e8e-a0bb-84889cf3941a",
+   "metadata": {},
+   "source": [
+    "False Negative (FN) = 2, The number of times the model incorrectly predicted the negative class (i.e, patients who did not have a stroke)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f0a90ff2-6cef-49b7-8ba6-a89ebc488143",
+   "metadata": {},
+   "source": [
+    "True Negative (TN) = 0, The number of times the model correctly predicted the negative class (i.e, patients who did not have a stroke)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4979b053-f161-4f7c-99dd-d1421dd8184b",
+   "metadata": {},
+   "source": [
+    "False Positive (FP) = 0, The number of times the model incorrectly predicted the positive class (i.e, patients who had a stroke)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "65b5d7c1-5d9e-46b0-8cae-551e4922dd42",
+   "metadata": {},
+   "source": [
+    "#### This confusion matrix is indicating that the model is classifying all of the instances in the test set as positive. This due to the fact that the data is imbalanced, meaning that the number of positive instances (i.e. patients who had a stroke) is much smaller than the number of negative instances (i.e. patients who did not have a stroke)"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
